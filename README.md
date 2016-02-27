@@ -30,14 +30,14 @@ Apache License 2.0
 
  The default filename for the configuration file is **soundbot.cfg**
 
- | Key             | Description                                                        |
- | --------------- | ------------------------------------------------------------------ |
- | email           | Bot's account e-maiil address                                      |
- | password        | Bot's account password                                             |
- | path.effects    | Path for sound effects                                             |
- | status          | The 'playing game' status message to display                       |
- | voice.channel   | The voice channel for the bot to connect to                        |
- | voice.bitrate   | The voice bitrate to use (in bits)                                 |
+| Key             | Description                                                        |
+| --------------- | ------------------------------------------------------------------ |
+| email           | Bot's account e-maiil address                                      |
+| password        | Bot's account password                                             |
+| path.effects    | Path for sound effects                                             |
+| status          | The 'playing game' status message to display                       |
+| voice.channel   | The voice channel for the bot to connect to                        |
+| voice.bitrate   | The voice bitrate to use (in bits)                                 |
 
 ## Configuration Sample
 
