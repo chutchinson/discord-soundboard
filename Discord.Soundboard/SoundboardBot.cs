@@ -49,8 +49,6 @@ namespace Discord.Soundboard
                 x.Bitrate = 128;
                 x.BufferLength = 10000;
             });
-            
-            
         }
 
         public SoundboardEffectRepository SoundEffectRepository
@@ -113,7 +111,7 @@ namespace Discord.Soundboard
                             return;
 
                         SoundboardLoggingService.Instance.Info(
-                            string.Format("[{0}] playing '{1}'", user.Name, effect));
+                            string.Format("[{0}] playing '{1}'", user.Name, name));
 
                         SendMessage(ch, string.Format(Properties.Resources.MessagePlayingSound, name));
 
