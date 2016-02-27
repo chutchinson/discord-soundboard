@@ -63,7 +63,13 @@ namespace Discord.Soundboard
         {
             client.ExecuteAndWait(async () =>
             {
+                SoundboardLoggingService.Instance.Info("connecting to server...");
+
+                // TODO: catch exceptions and retry
+
                 await client.Connect(Configuration.User, Configuration.Password);
+
+                SoundboardLoggingService.Instance.Info("connected");
 
                 if (!string.IsNullOrWhiteSpace(Configuration.Status))
                     client.SetGame(Configuration.Status);
@@ -72,18 +78,26 @@ namespace Discord.Soundboard
                 {
                     var server = client.Servers.FirstOrDefault();
                     var voiceChannel = server.FindChannels(Configuration.VoiceChannel, ChannelType.Voice, true).FirstOrDefault();
+
                     if (voiceChannel != null)
+                    {
+                        SoundboardLoggingService.Instance.Info("connecting to voice channel...");
+
                         audio = await voiceChannel.JoinAudio();
+
+                        // TODO: catch exceptions and retry
+                        // TODO: log voice channel connection state
+                    }
                 }
+
+                SoundboardLoggingService.Instance.Info("ready");
             });
         }
 
-        public void PlaySoundEffect(Channel ch, string name)
+        public void PlaySoundEffect(User user, Channel ch, string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return;
-
-            SendMessage(ch, string.Format("playing {0}", name));
 
             Task.Run(() =>
             {
@@ -97,6 +111,11 @@ namespace Discord.Soundboard
                     {
                         if (effect.Duration.TotalMilliseconds == 0)
                             return;
+
+                        SoundboardLoggingService.Instance.Info(
+                            string.Format("[{0}] playing '{1}'", user.Name, effect));
+
+                        SendMessage(ch, string.Format(Properties.Resources.MessagePlayingSound, name));
 
                         var format = new WaveFormat(48000, 16, 2);
                         var length = Convert.ToInt32(format.AverageBytesPerSecond / 60.0 * 1000.0);
@@ -112,6 +131,11 @@ namespace Discord.Soundboard
                     }
 
                 }
+                catch (Exception ex)
+                {
+                    SoundboardLoggingService.Instance.Error(
+                        string.Format(Properties.Resources.MessagePlayingFailed, name), ex);
+                }
                 finally
                 {
                     sending.Set();
@@ -120,12 +144,23 @@ namespace Discord.Soundboard
 
         }
 
+        public void SendMessage(Channel channel, string text)
+        {
+            if (channel == null)
+                return;
+
+            channel.SendMessage(text);
+        }
+
         protected void OnMessageReceived(object sender, MessageEventArgs e)
         {
             if (e.User.Id == client.CurrentUser.Id)
                 return;
 
-            if (e.Message.Attachments.Length > 0)
+            // TODO: handle multiple attachments
+            // TODO: handle exceptions
+
+            if (e.Channel.IsPrivate && e.Message.Attachments.Length > 0)
             {
                 var attachment = e.Message.Attachments.FirstOrDefault();
 
@@ -135,19 +170,19 @@ namespace Discord.Soundboard
 
                     if (attachment.Size >  2 * 1024 * 1024)
                     {
-                        SendMessage(e.Channel, "sorry that file is too big :(");
+                        SendMessage(e.Channel, Properties.Resources.MessageInvalidFileSize);
                         return;
                     }
 
-                    if (attachment.Filename.Contains(" "))
+                    if (!SoundEffectRepository.ValidateFilename(attachment.Filename))
                     {
-                        SendMessage(e.Channel, "sorry I can only accept effects without spaces");
+                        SendMessage(e.Channel, Properties.Resources.MessageInvalidFilename);
                         return;
                     }
 
-                    if (ext != ".wav")
+                    if (!SoundEffectRepository.ValidateFileExtension(ext))
                     {
-                        SendMessage(e.Channel, "sorry I can only accept *.wav files :(");
+                        SendMessage(e.Channel, Properties.Resources.MessageUnsupportedFileExtension);
                         return;
                     }
 
@@ -155,20 +190,37 @@ namespace Discord.Soundboard
                     var name = Path.GetFileName(attachment.Filename);
                     var path = Path.Combine(Configuration.EffectsPath, name);
 
-                    if (File.Exists(path))
+                    if (SoundEffectRepository.Exists(name))
                     {
-                        SendMessage(e.Channel, "sorry that sound already exists");
+                        SendMessage(e.Channel, Properties.Resources.MessageSoundExists);
                         return;
                     }
 
                     Task.Run(() =>
                     {
-                        using (var web = new WebClient())
+                        try
                         {
-                            web.DownloadFile(attachment.Url, path);
+                            using (var web = new WebClient())
+                            {
+                                SoundboardLoggingService.Instance.Info(
+                                    string.Format("downloading sound '{0}'", name));
 
-                            SoundEffectRepository.Add(new SoundboardEffect(path));
-                            SendMessage(e.Channel, string.Format("{0} is ready", key));
+                                web.DownloadFile(attachment.Url, path);
+
+                                SoundboardLoggingService.Instance.Info(
+                                    string.Format("downloaded '{0}'", name));
+
+                                SoundEffectRepository.Add(new SoundboardEffect(path));
+                                SendMessage(e.Channel, string.Format(Properties.Resources.MessageSoundReady, name));
+
+                                SoundboardLoggingService.Instance.Info(
+                                    string.Format("sound '{0}' is ready", name));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            SoundboardLoggingService.Instance.Error("failed to download sound '{0}'", ex);
+                            SendMessage(e.Channel, string.Format(Properties.Resources.MessageDownloadFailed, name));
                         }
                     });
 
@@ -180,19 +232,25 @@ namespace Discord.Soundboard
                 var tokens = e.Message.Text.Split(' ');
                 var cmd = (tokens.Length >= 2) ? tokens[1].ToLowerInvariant() : string.Empty;
 
+                SoundboardLoggingService.Instance.Info(
+                    string.Format("[{0}] sent command {1}", e.User.Name, cmd));
+
                 switch (cmd)
                 {
                     case "list":
-                        CommandListSounds(e.Channel);
+                        CommandListSounds(e.User, e.Channel);
                         break;
                     default:
-                        CommandPlayEffect(e.Channel, cmd);
+                        if (SoundEffectRepository.Exists(cmd))
+                            CommandPlayEffect(e.User, e.Channel, cmd);
+                        else
+                            CommandInvalid(e.User, e.Channel, cmd); ;
                         break;
                 }
             }
         }
 
-        protected void CommandListSounds(Channel ch)
+        protected void CommandListSounds(User user, Channel ch)
         {
             var builder = new StringBuilder();
             var list = string.Join(", ", SoundEffectRepository.Effects.Select(x => x.Key));
@@ -200,21 +258,18 @@ namespace Discord.Soundboard
             SendMessage(ch, list);
         }
 
-        protected void CommandPlayEffect(Channel ch, string effect)
+        protected void CommandPlayEffect(User user, Channel ch, string effect)
         {
             if (effect == null)
                 return;
 
-            PlaySoundEffect(ch, effect);
+            PlaySoundEffect(user, ch, effect);
         }
 
-        public void SendMessage(Channel channel, string text)
+        protected void CommandInvalid(User user, Channel ch, string command)
         {
-            if (channel == null)
-                return;
-
-            channel.SendMessage(text);
+            SendMessage(ch, string.Format(Properties.Resources.MessageInvalidCommand, command));
         }
-      
+
     }
 }
