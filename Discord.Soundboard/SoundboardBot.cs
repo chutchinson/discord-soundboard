@@ -32,7 +32,7 @@ namespace Discord.Soundboard
 
             client = new DiscordClient(x =>
             {
-                x.AppName = "Soundbot";
+                x.AppName = Configuration.Name;
                 x.MessageCacheSize = 0;
                 x.UsePermissionsCache = false;
                 x.EnablePreUpdateEvents = true;
@@ -168,7 +168,7 @@ namespace Discord.Soundboard
                 {
                     var ext = Path.GetExtension(attachment.Filename);
 
-                    if (attachment.Size >  2 * 1024 * 1024)
+                    if (attachment.Size > Configuration.MaximumSoundEffectSize)
                     {
                         SendMessage(e.Channel, Properties.Resources.MessageInvalidFileSize);
                         return;

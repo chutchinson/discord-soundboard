@@ -4,6 +4,8 @@ namespace Discord.Soundboard
 {
     public class SoundboardBotConfiguration
     {
+        public string Name { get; set; }
+
         public string Status { get; set; }
 
         public string User { get; set; }
@@ -22,8 +24,14 @@ namespace Discord.Soundboard
 
         public bool IsSpeechRecognitionEnabled { get; set; }
 
+        /// <summary>
+        /// Maximum sound effect file size (in bytes).
+        /// </summary>
+        public int MaximumSoundEffectSize { get; set; }
+
         public SoundboardBotConfiguration()
         {
+            this.Name = "Discord Soundboard";
             this.Status = string.Empty;
             this.User = string.Empty;
             this.Password = string.Empty;
@@ -33,6 +41,7 @@ namespace Discord.Soundboard
             this.VoiceChannel = string.Empty;
             this.SpeechRecognitionConfidenceThreshold = 0.85f;
             this.IsSpeechRecognitionEnabled = false;
+            this.MaximumSoundEffectSize = 2 * 1024 * 1024;
         }
 
         public static SoundboardBotConfiguration FromFile(string filename)
@@ -48,6 +57,7 @@ namespace Discord.Soundboard
 
         public void Load(Configuration cfg)
         {
+            Name = cfg.TryGetValue("name", "Discord Soundboard");
             Status = cfg.TryGetValue("status", "Soundboard");
             User = cfg.TryGetValue("email", string.Empty);
             Password = cfg.TryGetValue("password", string.Empty);
@@ -57,6 +67,7 @@ namespace Discord.Soundboard
             VoiceChannel = cfg.TryGetValue("voice.channel", string.Empty);
             IsSpeechRecognitionEnabled = cfg.TryGetValue("voice.recognition.enabled", false);
             SpeechRecognitionConfidenceThreshold = cfg.TryGetValue("voice.recognition.threshold", 0.85f);
+            MaximumSoundEffectSize = cfg.TryGetValue("repository.file.maximumSize", 2 * 1024 * 1024);
         }
     }
 }
