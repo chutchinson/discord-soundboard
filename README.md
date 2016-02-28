@@ -75,9 +75,12 @@ Plays a registered sound effect. This is the default command.
 ### stats
 
 Presents various statistics collected over time.
-- **topusers**: prints list of users with the longest play durations
-- **topsounds**: prints list of sounds with the most plays
-- **totals**: prints total number of sounds, number of plays, and total duration 
+
+| stat           | description                                                                 |
+| -------------- | --------------------------------------------------------------------------- |
+| topusers       | prints list of users with the longest play durations                        |
+| topsounds      | prints list of sounds with the most plays                                   |
+| totals         | prints total number of sounds, number of plays, and total duration played   |
 
     @soundbot stats <stat>
     @soundbot stats totals
