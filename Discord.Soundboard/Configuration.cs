@@ -47,6 +47,7 @@ namespace Discord.Soundboard
                 return;
 
             var lines = File.ReadAllLines(path);
+
             foreach (var line in lines)
                 ParseLine(line);
         }

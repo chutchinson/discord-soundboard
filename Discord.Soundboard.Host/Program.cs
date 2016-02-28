@@ -14,7 +14,15 @@ namespace Discord.Soundboard.Host
 
             Console.Title = configuration.Name;
 
-            bot.Connect();
+            try
+            {
+                bot.LoadDatabase();
+                bot.Connect();
+            }
+            finally
+            {
+                bot.Database.Save();
+            }
         }
     }
 }

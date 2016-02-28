@@ -61,6 +61,24 @@ namespace Discord.Soundboard.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to failed to load the soundboard database.
+        /// </summary>
+        internal static string MessageDatabaseLoadFailed {
+            get {
+                return ResourceManager.GetString("MessageDatabaseLoadFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to saving soundboard database....
+        /// </summary>
+        internal static string MessageDatabaseSaving {
+            get {
+                return ResourceManager.GetString("MessageDatabaseSaving", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to sorry I couldn&apos;t download {0}.
         /// </summary>
         internal static string MessageDownloadFailed {

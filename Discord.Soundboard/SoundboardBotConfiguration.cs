@@ -16,6 +16,10 @@ namespace Discord.Soundboard
 
         public string EffectsPath { get; set; }
 
+        public string DatabasePath { get; set; }
+
+        public long DatabaseSaveInterval { get; set; }
+
         public string VoiceChannel { get; set; }
 
         public int Bitrate { get; set; }
@@ -37,7 +41,9 @@ namespace Discord.Soundboard
             this.Password = string.Empty;
             this.Token = string.Empty;
             this.EffectsPath = "Effects";
-            this.Bitrate = 128;
+            this.DatabasePath = "Data\\soundbot.db";
+            this.DatabaseSaveInterval = 15000;
+            this.Bitrate = 64;
             this.VoiceChannel = string.Empty;
             this.SpeechRecognitionConfidenceThreshold = 0.85f;
             this.IsSpeechRecognitionEnabled = false;
@@ -46,13 +52,14 @@ namespace Discord.Soundboard
 
         public static SoundboardBotConfiguration FromFile(string filename)
         {
+            var config = new SoundboardBotConfiguration();
+
             if (!File.Exists(filename))
-                return null;
+                return config;
 
-            var result = new SoundboardBotConfiguration();
-            result.Load(Configuration.FromFile(filename));
+            config.Load(Configuration.FromFile(filename));
 
-            return result;
+            return config;
         }
 
         public void Load(Configuration cfg)
@@ -63,7 +70,9 @@ namespace Discord.Soundboard
             Password = cfg.TryGetValue("password", string.Empty);
             Token = cfg.TryGetValue("token", string.Empty);
             EffectsPath = cfg.TryGetValue("path.effects", "Effects");
-            Bitrate = cfg.TryGetValue("voice.bitrate", 128);
+            DatabasePath = cfg.TryGetValue("path.database", "Data\\soundbot.db");
+            DatabaseSaveInterval = cfg.TryGetValue("database.save.interval", 15000);
+            Bitrate = cfg.TryGetValue("voice.bitrate", 64);
             VoiceChannel = cfg.TryGetValue("voice.channel", string.Empty);
             IsSpeechRecognitionEnabled = cfg.TryGetValue("voice.recognition.enabled", false);
             SpeechRecognitionConfidenceThreshold = cfg.TryGetValue("voice.recognition.threshold", 0.85f);

@@ -12,14 +12,21 @@ using Discord.Modules;
 
 using NAudio.Wave;
 
+using Discord.Soundboard.Data;
+using Discord.Soundboard.Text;
+
 namespace Discord.Soundboard
 {
     public class SoundboardBot
     {
         private DiscordClient client;
         private IAudioClient audio;
-        private IDictionary<string, SoundboardSpeechRecognizer> recognizers;
         private ManualResetEvent sending;
+        private Task save;
+
+        public SoundboardDatabase Database { get; protected set; }
+
+        public SoundboardStatistics Statistics { get; protected set; }
 
         public SoundboardBot(SoundboardBotConfiguration cfg)
         {
@@ -27,8 +34,15 @@ namespace Discord.Soundboard
             SoundEffectRepository = new SoundboardEffectRepository();
             SoundEffectRepository.LoadFromDirectory(Configuration.EffectsPath);
 
+            Database = new SoundboardDatabase(new SoundboardDatabaseConfiguration()
+            {
+                Path = Configuration.DatabasePath
+            });
+
+            Statistics = new SoundboardStatistics(Database);
+
             sending = new ManualResetEvent(true);
-            recognizers = new Dictionary<string, SoundboardSpeechRecognizer>();
+            save = CreateSaveTask();
 
             client = new DiscordClient(x =>
             {
@@ -56,6 +70,45 @@ namespace Discord.Soundboard
 
         public SoundboardBotConfiguration Configuration
         { get; protected set; }
+
+        public Task CreateSaveTask()
+        {
+            return new Task(async () =>
+            {
+                while (client.CancelToken != null && !client.CancelToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        SoundboardLoggingService.Instance.Info(Properties.Resources.MessageDatabaseSaving);
+                        Database.Save();
+                    }
+                    catch (Exception ex)
+                    {
+                        SoundboardLoggingService.Instance.Error(
+                            Properties.Resources.MessageDatabaseLoadFailed, ex);
+                    }
+
+                    await Task.Delay(
+                        TimeSpan.FromMilliseconds(Configuration.DatabaseSaveInterval));
+                }
+            });
+        }
+
+        public void LoadDatabase()
+        {
+            try
+            {
+                SoundboardLoggingService.Instance.Info("loading database...");
+
+                Database.CreateIfNotExists();
+                Database.Load();
+            }
+            catch (Exception ex)
+            {
+                SoundboardLoggingService.Instance.Error(
+                    Properties.Resources.MessageDatabaseLoadFailed, ex);
+            }
+        }
 
         public void Connect()
         {
@@ -89,6 +142,10 @@ namespace Discord.Soundboard
                 }
 
                 SoundboardLoggingService.Instance.Info("ready");
+
+                // Start database save task
+
+                save.Start();
             });
         }
 
@@ -113,7 +170,15 @@ namespace Discord.Soundboard
                         SoundboardLoggingService.Instance.Info(
                             string.Format("[{0}] playing '{1}'", user.Name, name));
 
+                        // Records play statistics
+
+                        Statistics.Play(user, effect);
+
+                        // Notify users soundbot will begin playing
+
                         SendMessage(ch, string.Format(Properties.Resources.MessagePlayingSound, name));
+
+                        // Resample and stream sound effect over the configured voice channel
 
                         var format = new WaveFormat(48000, 16, 2);
                         var length = Convert.ToInt32(format.AverageBytesPerSecond / 60.0 * 1000.0);
@@ -238,13 +303,80 @@ namespace Discord.Soundboard
                     case "list":
                         CommandListSounds(e.User, e.Channel);
                         break;
+                    case "stats":
+                        CommandStatistics(e.User, e.Channel, tokens);
+                        break;
                     default:
-                        if (SoundEffectRepository.Exists(cmd))
-                            CommandPlayEffect(e.User, e.Channel, cmd);
-                        else
-                            CommandInvalid(e.User, e.Channel, cmd); ;
+                        CommandDefault(e.User, e.Channel, cmd);
                         break;
                 }
+            }
+        }
+
+        protected void CommandDefault(User user, Channel ch, string cmd)
+        {
+            if (SoundEffectRepository.Exists(cmd))
+                CommandPlayEffect(user, ch, cmd);
+            else
+                CommandInvalid(user, ch, cmd);
+        }
+
+        protected void CommandStatistics(User user, Channel ch, string[] tokens)
+        {
+            if (tokens.Length < 3)
+                return;
+
+            var cmd = tokens[2];
+
+            switch (cmd)
+            {
+                case "totals":
+                    CommandStatisticsTotals(user, ch, tokens);
+                    break;
+                case "topusers":
+                    CommandStatisticsTopUsers(user, ch, tokens);
+                    break;
+                case "topsounds":
+                    CommandStatisticsTopSounds(user, ch, tokens);
+                    break;
+            }
+        }
+
+        protected void CommandStatisticsTotals(User user, Channel ch, string[] tokens)
+        {
+            var totalDuration = Statistics.GetTotalDuration();
+            var totalPlayCount = Statistics.GetTotalPlayCounts();
+            var count = Database.Sounds.Count;
+
+            var message = string.Format("played {0} {3} {1} {4} for {2}",
+                count, totalPlayCount, totalDuration, "sound".Pluralize(count), "time".Pluralize(totalPlayCount));
+
+            SendMessage(ch, message);
+        }
+
+        protected void CommandStatisticsTopSounds(User user, Channel ch, string[] tokens)
+        {
+            var sounds = Statistics.GetTopSounds(5);
+
+            if (sounds.Any())
+            {
+                var message = string.Join(", ", sounds.Select((x, p) =>
+                    string.Format("{0}. {1} ({2})", p + 1, x.Name, x.PlayCount)));
+
+                SendMessage(ch, string.Format("top sounds by play count: {0}", message));
+            }
+        }
+
+        protected void CommandStatisticsTopUsers(User user, Channel ch, string[] tokens)
+        {
+            var users = Statistics.GetTopUsers(5);
+
+            if (users.Any())
+            {
+                var message = string.Join(", ", users.Select((x, p) =>
+                    string.Format("{0}. {1} ({2})", p + 1, x.Name, TimeSpan.FromMilliseconds(x.MillisecondsPlayed))));
+
+                SendMessage(ch, string.Format("top users are {0}", message));
             }
         }
 

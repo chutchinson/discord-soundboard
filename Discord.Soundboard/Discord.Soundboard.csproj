@@ -99,6 +99,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\Record.cs" />
+    <Compile Include="Data\RecordCollection.cs" />
+    <Compile Include="Data\Sound.cs" />
+    <Compile Include="Data\SoundboardDatabase.cs" />
+    <Compile Include="Data\SoundboardDatabaseConfiguration.cs" />
+    <Compile Include="Data\User.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -114,6 +120,8 @@
     <Compile Include="SoundboardEffectRepository.cs" />
     <Compile Include="SoundboardSpeechRecognizer.cs" />
     <Compile Include="Services\SoundboardLoggingService.cs" />
+    <Compile Include="SoundboardStatistics.cs" />
+    <Compile Include="Text\StringExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

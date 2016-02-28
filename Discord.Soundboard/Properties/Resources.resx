@@ -157,4 +157,10 @@
     <value>sorry I couldn't download {0}</value>
     <comment>Response when an uploaded file could not be downloaded and installed</comment>
   </data>
+  <data name="MessageDatabaseLoadFailed" xml:space="preserve">
+    <value>failed to load the soundboard database</value>
+  </data>
+  <data name="MessageDatabaseSaving" xml:space="preserve">
+    <value>saving soundboard database...</value>
+  </data>
 </root>
