@@ -8,15 +8,18 @@ Apache License 2.0
 
 ## Caveats
 
- This bot was written for a small circle of friends and suffers from a lack of documentation, no warranty of any kind, and is not representative of quality work.
+This bot was written for a small circle of friends and suffers from a lack of documentation, no warranty of any kind, and is not representative of quality work.
+
+## Supported Platforms
+- Windows
 
 ## Dependencies
- - Discord.Net
- - Discord.Net.Audio
- - Discord.Net.Modules
- - Discord.Net.Commands
- - NAudio
- - Opus
+- Discord.Net
+- Discord.Net.Audio
+- Discord.Net.Modules
+- Discord.Net.Commands
+- NAudio
+- Opus
 
 ## Features
 
@@ -28,16 +31,20 @@ Apache License 2.0
 
 ## Configuration
 
- The default filename for the configuration file is **soundbot.cfg**
+The default filename for the configuration file is **soundbot.cfg**
 
-| Key             | Description                                                        |
-| --------------- | ------------------------------------------------------------------ |
-| email           | Bot's account e-maiil address                                      |
-| password        | Bot's account password                                             |
-| path.effects    | Path for sound effects                                             |
-| status          | The 'playing game' status message to display                       |
-| voice.channel   | The voice channel for the bot to connect to                        |
-| voice.bitrate   | The voice bitrate to use (in bits)                                 |
+| Key                    | Description                                                 | Default                       |
+| ---------------------- | ----------------------------------------------------------- | ----------------------------- |
+| name                   | Bot's name used for display purposes                        | Discord Soundboard            |
+| email                  | Bot's account e-mail address                                | n/a                           |
+| password               | Bot's account password                                      | n/a                           |
+| path.effects           | Path for sound effects                                      | Effects                       |
+| path.database          | Path for bot database file                                  | Data/soundbot.db              |
+| database.save.interval | Interval (ms) the database is persisted to disk             | 15000                         |
+| status                 | The 'playing game' status message to display                | Soundboard                    |
+| voice.channel          | The voice channel for the bot to connect to                 | n/a                           |
+| voice.bitrate          | The voice bitrate to use (in bits)                          | 64                            |
+| repository.file.maximumSize | Maximum file size for sound effects (in bytes)         | 2097152                       |
 
 ## Configuration Sample
 
@@ -50,17 +57,30 @@ Apache License 2.0
 
 ## Commands
 
-  Assuming the bot's handle is **soundbot**:
+Assuming the bot's handle is **soundbot**:
 
 ### list
 
-  Lists all sound effects registered by the bot.
+Lists all sound effects registered by the bot.
 
-      @soundbot list
+    @soundbot list
 
 ### play
 
-  Plays a registered sound effect. This is the default command.
+Plays a registered sound effect. This is the default command.
 
     @soundbot <effect>
     @soundbot boop
+    
+### stats
+
+Presents various statistics collected over time.
+
+| stat           | description                                                                 |
+| -------------- | --------------------------------------------------------------------------- |
+| topusers       | prints list of users with the longest play durations                        |
+| topsounds      | prints list of sounds with the most plays                                   |
+| totals         | prints total number of sounds, number of plays, and total duration played   |
+
+    @soundbot stats <stat>
+    @soundbot stats totals
