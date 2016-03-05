@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 
 namespace Discord.Soundboard.Host
 {
@@ -14,6 +15,12 @@ namespace Discord.Soundboard.Host
 
             Console.Title = configuration.Name;
 
+            if (IsRunningOnMono())
+            {
+                ServicePointManager.ServerCertificateValidationCallback +=
+                    (sender, cert, chain, err) => true;
+            }
+
             try
             {
                 bot.LoadDatabase();
@@ -23,6 +30,11 @@ namespace Discord.Soundboard.Host
             {
                 bot.Database.Save();
             }
+        }
+
+        public static bool IsRunningOnMono()
+        {
+            return Type.GetType("Mono.Runtime") != null;
         }
     }
 }

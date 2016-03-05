@@ -301,7 +301,7 @@ namespace Discord.Soundboard
                 switch (cmd)
                 {
                     case "list":
-                        CommandListSounds(e.User, e.Channel);
+                        CommandListSounds(e.User, e.Channel, tokens);
                         break;
                     case "stats":
                         CommandStatistics(e.User, e.Channel, tokens);
@@ -323,10 +323,7 @@ namespace Discord.Soundboard
 
         protected void CommandStatistics(User user, Channel ch, string[] tokens)
         {
-            if (tokens.Length < 3)
-                return;
-
-            var cmd = tokens[2];
+            var cmd = (tokens.Length > 2) ? tokens[2] : tokens[1];
 
             switch (cmd)
             {
@@ -380,10 +377,28 @@ namespace Discord.Soundboard
             }
         }
 
-        protected void CommandListSounds(User user, Channel ch)
+        protected void CommandListSounds(User user, Channel ch, string[] tokens)
         {
-            var builder = new StringBuilder();
-            var list = string.Join(", ", SoundEffectRepository.Effects.Select(x => x.Key));
+            IEnumerable<string> query = null;
+
+            var cmd = tokens.Length > 2 ? tokens[2] : tokens[1];
+
+            switch (cmd)
+            {
+                case "recent":
+                    query = from e in SoundEffectRepository.Effects
+                            orderby e.Value.DateLastModified descending
+                            select e.Value.Name;
+                    break;
+                default:
+                    query = from e in SoundEffectRepository.Effects
+                            orderby e.Value.Name ascending
+                            select e.Value.Name;
+                    break;
+            }
+
+
+            var list = string.Join(", ", query);
 
             SendMessage(ch, list);
         }

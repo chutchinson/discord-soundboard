@@ -13,6 +13,8 @@ namespace Discord.Soundboard
 
         public TimeSpan Duration { get; set; }
 
+        public DateTime DateLastModified { get; set; }
+
         public SoundboardEffect(string filename)
         {
             if (filename == null)
@@ -25,12 +27,15 @@ namespace Discord.Soundboard
             {
                 if (File.Exists(filename))
                 {
+                    this.DateLastModified = File.GetLastWriteTimeUtc(filename);
+
                     using (var reader = new WaveFileReader(filename))
                         this.Duration = reader.TotalTime;
                 }
             }
             catch (Exception)
             {
+                this.DateLastModified = DateTime.MinValue;
                 this.Duration = TimeSpan.Zero;
             }
         }
