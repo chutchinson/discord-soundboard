@@ -170,6 +170,9 @@ namespace Discord.Soundboard
                         SoundboardLoggingService.Instance.Info(
                             string.Format("[{0}] playing '{1}'", user.Name, name));
 
+                        // Change "playing" to the sound effect name
+                        client.SetGame(name);
+
                         // Records play statistics
 
                         Statistics.Play(user, effect);
@@ -191,6 +194,8 @@ namespace Discord.Soundboard
                             while ((count = resampler.Read(buffer, 0, length)) > 0)
                                 audio.Send(buffer, 0, count);
                         }
+                        audio.Wait();
+                        client.SetGame(Configuration.Status);
                     }
 
                 }
@@ -415,6 +420,5 @@ namespace Discord.Soundboard
         {
             SendMessage(ch, string.Format(Properties.Resources.MessageInvalidCommand, command));
         }
-
     }
 }
