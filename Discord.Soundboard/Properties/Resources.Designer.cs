@@ -79,7 +79,7 @@ namespace Discord.Soundboard.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to sorry I couldn&apos;t download {0}.
+        ///   Looks up a localized string similar to sorry I couldn&apos;t download &lt;{0}&gt;.
         /// </summary>
         internal static string MessageDownloadFailed {
             get {
@@ -88,7 +88,7 @@ namespace Discord.Soundboard.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to sorry I do not recognize the command {0}.
+        ///   Looks up a localized string similar to sorry I do not recognize the command &lt;{0}&gt;.
         /// </summary>
         internal static string MessageInvalidCommand {
             get {
@@ -115,7 +115,7 @@ namespace Discord.Soundboard.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to failed to play {0}.
+        ///   Looks up a localized string similar to failed to play &lt;{0}&gt;.
         /// </summary>
         internal static string MessagePlayingFailed {
             get {
@@ -124,7 +124,7 @@ namespace Discord.Soundboard.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to playing {0}.
+        ///   Looks up a localized string similar to playing &lt;{0}&gt;.
         /// </summary>
         internal static string MessagePlayingSound {
             get {
@@ -142,7 +142,7 @@ namespace Discord.Soundboard.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {0} is ready.
+        ///   Looks up a localized string similar to &lt;{0}&gt; is ready.
         /// </summary>
         internal static string MessageSoundReady {
             get {
@@ -151,7 +151,7 @@ namespace Discord.Soundboard.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to sorry the file extension {0} is not supported.
+        ///   Looks up a localized string similar to sorry the file extension &lt;0&gt; is not supported.
         /// </summary>
         internal static string MessageUnsupportedFileExtension {
             get {

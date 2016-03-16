@@ -20,6 +20,8 @@ namespace Discord.Soundboard
 
         public long DatabaseSaveInterval { get; set; }
 
+        public string Server { get; set; }
+
         public string VoiceChannel { get; set; }
 
         public int Bitrate { get; set; }
@@ -44,6 +46,7 @@ namespace Discord.Soundboard
             this.DatabasePath = "Data\\soundbot.db";
             this.DatabaseSaveInterval = 15000;
             this.Bitrate = 64;
+            this.Server = string.Empty;
             this.VoiceChannel = string.Empty;
             this.SpeechRecognitionConfidenceThreshold = 0.85f;
             this.IsSpeechRecognitionEnabled = false;
@@ -73,6 +76,7 @@ namespace Discord.Soundboard
             DatabasePath = cfg.TryGetValue("path.database", "Data\\soundbot.db");
             DatabaseSaveInterval = cfg.TryGetValue("database.save.interval", 15000);
             Bitrate = cfg.TryGetValue("voice.bitrate", 64);
+            Server = cfg.TryGetValue("server", string.Empty);
             VoiceChannel = cfg.TryGetValue("voice.channel", string.Empty);
             IsSpeechRecognitionEnabled = cfg.TryGetValue("voice.recognition.enabled", false);
             SpeechRecognitionConfidenceThreshold = cfg.TryGetValue("voice.recognition.threshold", 0.85f);

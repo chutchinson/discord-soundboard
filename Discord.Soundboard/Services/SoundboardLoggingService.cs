@@ -27,6 +27,11 @@ namespace Discord.Soundboard
             logger.Warn(msg);
         }
 
+        public void Error(string msg)
+        {
+            logger.Error(msg);
+        }
+
         public void Error(string msg, Exception ex)
         {
             logger.Error(ex, msg);

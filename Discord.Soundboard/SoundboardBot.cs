@@ -24,6 +24,8 @@ namespace Discord.Soundboard
         private ManualResetEvent sending;
         private Task save;
 
+        public Server Server { get; protected set; }
+
         public SoundboardDatabase Database { get; protected set; }
 
         public SoundboardStatistics Statistics { get; protected set; }
@@ -98,10 +100,12 @@ namespace Discord.Soundboard
         {
             try
             {
-                SoundboardLoggingService.Instance.Info("loading database...");
+                SoundboardLoggingService.Instance.Info("database loading...");
 
                 Database.CreateIfNotExists();
                 Database.Load();
+
+                SoundboardLoggingService.Instance.Info("database loaded");
             }
             catch (Exception ex)
             {
@@ -110,35 +114,93 @@ namespace Discord.Soundboard
             }
         }
 
+        public async void ConnectToVoice()
+        {
+            if (string.IsNullOrWhiteSpace(Configuration.VoiceChannel))
+                return;
+
+            if (Server == null)
+                return;
+
+            // If we are already connected or connecting then don't attempt to connect to voice again.
+
+            if (audio != null && audio.State == ConnectionState.Connected || audio.State == ConnectionState.Connecting)
+                return;
+
+            // Find the voice channel within the connected server.
+
+            var channel = Server.FindChannels(Configuration.VoiceChannel, ChannelType.Voice, true).FirstOrDefault();
+
+            if (channel != null)
+            {
+                SoundboardLoggingService.Instance.Info("connecting to voice channel...");
+
+                try
+                {
+                    audio = await channel.JoinAudio();
+
+                    if (audio != null)
+                    {
+                        switch (audio.State)
+                        {
+                            case ConnectionState.Connected:
+                                SoundboardLoggingService.Instance.Info("connected to voice");
+                                break;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SoundboardLoggingService.Instance.Error("failed to connect to voice", ex);
+                    return;
+                }
+            }
+        }
+
+        public void SetStatusMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+
+            client.SetGame(message);
+        }
+
         public void Connect()
         {
             client.ExecuteAndWait(async () =>
             {
-                SoundboardLoggingService.Instance.Info("connecting to server...");
+                SoundboardLoggingService.Instance.Info("authenticating...");
 
-                // TODO: catch exceptions and retry
+                try
+                {
+                    await client.Connect(Configuration.User, Configuration.Password);
+                }
+                catch (Exception ex)
+                {
+                    SoundboardLoggingService.Instance.Error("authentication failed", ex);
+                    return;
+                }
 
-                await client.Connect(Configuration.User, Configuration.Password);
+                SoundboardLoggingService.Instance.Info("authenticated");
 
-                SoundboardLoggingService.Instance.Info("connected");
+                // Cache the server information
 
-                if (!string.IsNullOrWhiteSpace(Configuration.Status))
-                    client.SetGame(Configuration.Status);
+                Server = client.FindServers(Configuration.Server).FirstOrDefault();
+
+                // Set the status (game) message
+
+                SetStatusMessage(Configuration.Status);
 
                 if (!string.IsNullOrEmpty(Configuration.VoiceChannel))
                 {
-                    var server = client.Servers.FirstOrDefault();
-                    var voiceChannel = server.FindChannels(Configuration.VoiceChannel, ChannelType.Voice, true).FirstOrDefault();
-
-                    if (voiceChannel != null)
+                    if (Server == null)
                     {
-                        SoundboardLoggingService.Instance.Info("connecting to voice channel...");
-
-                        audio = await voiceChannel.JoinAudio();
-
-                        // TODO: catch exceptions and retry
-                        // TODO: log voice channel connection state
+                        SoundboardLoggingService.Instance.Error(
+                            string.Format("could not find server <{0}>", Configuration.Server));
+                        return;
                     }
+
+                    ConnectToVoice();
                 }
 
                 SoundboardLoggingService.Instance.Info("ready");
@@ -154,6 +216,12 @@ namespace Discord.Soundboard
             if (string.IsNullOrWhiteSpace(name))
                 return;
 
+            // Ensure voice channel is connected
+
+            ConnectToVoice();
+
+            // Play the sound effect
+
             Task.Run(() =>
             {
                 try
@@ -168,7 +236,7 @@ namespace Discord.Soundboard
                             return;
 
                         SoundboardLoggingService.Instance.Info(
-                            string.Format("[{0}] playing '{1}'", user.Name, name));
+                            string.Format("[{0}] playing <{1}>", user.Name, name));
 
                         // Records play statistics
 
@@ -266,23 +334,23 @@ namespace Discord.Soundboard
                             using (var web = new WebClient())
                             {
                                 SoundboardLoggingService.Instance.Info(
-                                    string.Format("downloading sound '{0}'", name));
+                                    string.Format("downloading sound <{0}>", name));
 
                                 web.DownloadFile(attachment.Url, path);
 
                                 SoundboardLoggingService.Instance.Info(
-                                    string.Format("downloaded '{0}'", name));
+                                    string.Format("downloaded <{0}>", name));
 
                                 SoundEffectRepository.Add(new SoundboardEffect(path));
                                 SendMessage(e.Channel, string.Format(Properties.Resources.MessageSoundReady, name));
 
                                 SoundboardLoggingService.Instance.Info(
-                                    string.Format("sound '{0}' is ready", name));
+                                    string.Format("sound <{0}> is ready", name));
                             }
                         }
                         catch (Exception ex)
                         {
-                            SoundboardLoggingService.Instance.Error("failed to download sound '{0}'", ex);
+                            SoundboardLoggingService.Instance.Error("failed to download sound <{0}>", ex);
                             SendMessage(e.Channel, string.Format(Properties.Resources.MessageDownloadFailed, name));
                         }
                     });
@@ -296,7 +364,7 @@ namespace Discord.Soundboard
                 var cmd = (tokens.Length >= 2) ? tokens[1].ToLowerInvariant() : string.Empty;
 
                 SoundboardLoggingService.Instance.Info(
-                    string.Format("[{0}] sent command {1}", e.User.Name, cmd));
+                    string.Format("[{0}] sent command <{1}>", e.User.Name, cmd));
 
                 switch (cmd)
                 {

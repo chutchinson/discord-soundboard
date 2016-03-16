@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="MessageInvalidCommand" xml:space="preserve">
-    <value>sorry I do not recognize the command {0}</value>
+    <value>sorry I do not recognize the command &lt;{0}&gt;</value>
     <comment>Response when the bot does not recognize a command</comment>
   </data>
   <data name="MessageInvalidFilename" xml:space="preserve">
@@ -130,15 +130,15 @@
     <comment>Response when a file is too large to install</comment>
   </data>
   <data name="MessagePlayingSound" xml:space="preserve">
-    <value>playing {0}</value>
+    <value>playing &lt;{0}&gt;</value>
     <comment>Response when a sound is being played</comment>
   </data>
   <data name="MessageSoundReady" xml:space="preserve">
-    <value>{0} is ready</value>
+    <value>&lt;{0}&gt; is ready</value>
     <comment>Response to user when a sound has been installed</comment>
   </data>
   <data name="MessageUnsupportedFileExtension" xml:space="preserve">
-    <value>sorry the file extension {0} is not supported</value>
+    <value>sorry the file extension &lt;0&gt; is not supported</value>
     <comment>Response to an unsupported file extension</comment>
   </data>
   <data name="MessageUnsupportedFormat" xml:space="preserve">
@@ -146,7 +146,7 @@
     <comment>Response to an unsupported file format</comment>
   </data>
   <data name="MessagePlayingFailed" xml:space="preserve">
-    <value>failed to play {0}</value>
+    <value>failed to play &lt;{0}&gt;</value>
     <comment>Response when a sound failed to play</comment>
   </data>
   <data name="MessageSoundExists" xml:space="preserve">
@@ -154,7 +154,7 @@
     <comment>Response when a sound already exists</comment>
   </data>
   <data name="MessageDownloadFailed" xml:space="preserve">
-    <value>sorry I couldn't download {0}</value>
+    <value>sorry I couldn't download &lt;{0}&gt;</value>
     <comment>Response when an uploaded file could not be downloaded and installed</comment>
   </data>
   <data name="MessageDatabaseLoadFailed" xml:space="preserve">
