@@ -124,37 +124,42 @@ namespace Discord.Soundboard
 
             // If we are already connected or connecting then don't attempt to connect to voice again.
 
-            if (audio != null && audio.State == ConnectionState.Connected || audio.State == ConnectionState.Connecting)
+            if (audio != null && (audio.State == ConnectionState.Connected || audio.State == ConnectionState.Connecting))
                 return;
 
             // Find the voice channel within the connected server.
 
             var channel = Server.FindChannels(Configuration.VoiceChannel, ChannelType.Voice, true).FirstOrDefault();
 
-            if (channel != null)
+            if (channel == null)
             {
-                SoundboardLoggingService.Instance.Info("connecting to voice channel...");
+                SoundboardLoggingService.Instance.Error(
+                    string.Format("voice channel <{0}> does not exist", Configuration.VoiceChannel));
+                return;
+            }
 
-                try
+            SoundboardLoggingService.Instance.Info("connecting to voice channel...");
+
+            try
+            {
+                audio = await channel.JoinAudio();
+
+                if (audio != null)
                 {
-                    audio = await channel.JoinAudio();
-
-                    if (audio != null)
+                    switch (audio.State)
                     {
-                        switch (audio.State)
-                        {
-                            case ConnectionState.Connected:
-                                SoundboardLoggingService.Instance.Info("connected to voice");
-                                break;
-                        }
+                        case ConnectionState.Connected:
+                            SoundboardLoggingService.Instance.Info("connected to voice");
+                            break;
                     }
                 }
-                catch (Exception ex)
-                {
-                    SoundboardLoggingService.Instance.Error("failed to connect to voice", ex);
-                    return;
-                }
             }
+            catch (Exception ex)
+            {
+                SoundboardLoggingService.Instance.Error("failed to connect to voice", ex);
+                return;
+            }
+            
         }
 
         public void SetStatusMessage(string message)
