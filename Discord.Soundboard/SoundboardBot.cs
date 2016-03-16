@@ -239,7 +239,8 @@ namespace Discord.Soundboard
                             string.Format("[{0}] playing <{1}>", user.Name, name));
 
                         // Change "playing" to the sound effect name
-                        client.SetGame(name);
+
+                        SetStatusMessage(name);
 
                         // Records play statistics
 
@@ -262,8 +263,10 @@ namespace Discord.Soundboard
                             while ((count = resampler.Read(buffer, 0, length)) > 0)
                                 audio.Send(buffer, 0, count);
                         }
+
                         audio.Wait();
-                        client.SetGame(Configuration.Status);
+
+                        SetStatusMessage(Configuration.Status);
                     }
 
                 }
