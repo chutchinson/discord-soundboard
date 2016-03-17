@@ -387,6 +387,9 @@ namespace Discord.Soundboard
                     case "stats":
                         CommandStatistics(e.User, e.Channel, tokens);
                         break;
+                    case "random":
+                        CommandPlayRandomEffect(e.User, e.Channel);
+                        break;
                     default:
                         CommandDefault(e.User, e.Channel, cmd);
                         break;
@@ -482,6 +485,15 @@ namespace Discord.Soundboard
             var list = string.Join(", ", query);
 
             SendMessage(ch, list);
+        }
+
+        protected void CommandPlayRandomEffect(User user, Channel ch)
+        {
+            var ran = new Random((int) DateTime.Now.Ticks);
+            var index = ran.Next(SoundEffectRepository.Effects.Count);
+            var effect = SoundEffectRepository.Effects.Values.ElementAt(index);
+
+            PlaySoundEffect(user, ch, effect.Name);
         }
 
         protected void CommandPlayEffect(User user, Channel ch, string effect)
