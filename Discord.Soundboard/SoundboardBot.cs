@@ -23,6 +23,8 @@ namespace Discord.Soundboard
         private ManualResetEvent sending;
         private Task save;
 
+        public DateTime LastInteractionTime { get; set; }
+
         public DiscordClient Client { get; protected set; }
 
         public Server Server { get; protected set; }
@@ -36,6 +38,7 @@ namespace Discord.Soundboard
             Configuration = cfg ?? new SoundboardBotConfiguration();
             SoundEffectRepository = new SoundboardEffectRepository();
             SoundEffectRepository.LoadFromDirectory(Configuration.EffectsPath);
+            LastInteractionTime = DateTime.Now;
 
             Database = new SoundboardDatabase(new SoundboardDatabaseConfiguration()
             {
@@ -369,6 +372,18 @@ namespace Discord.Soundboard
             if (e.User.Id == Client.CurrentUser.Id)
                 return;
 
+            // Avoid rapid interactions to avoid abuse and bot loops
+
+            var interactionTimeSpan = (DateTime.Now - LastInteractionTime).TotalMilliseconds;
+
+            if (interactionTimeSpan <= Configuration.MinimumInteractionThreshold)
+            {
+                SoundboardLoggingService.Instance.Warning(
+                    string.Format("interaction avoided (interaction allowed in {0} ms)", 
+                    Configuration.MinimumInteractionThreshold - interactionTimeSpan));
+                return;
+            }
+
             // Unflip tables
 
             if (e.Message.RawText.Contains("┻━┻"))
@@ -405,6 +420,11 @@ namespace Discord.Soundboard
                         break;
                 }
             }
+
+            // Update last interaction timestamp
+
+            LastInteractionTime = DateTime.Now;
+
         }
 
         protected void CommandDefault(User user, Channel ch, string cmd)

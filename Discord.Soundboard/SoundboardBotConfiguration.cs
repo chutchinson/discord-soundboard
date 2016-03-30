@@ -30,6 +30,8 @@ namespace Discord.Soundboard
 
         public bool IsSpeechRecognitionEnabled { get; set; }
 
+        public int MinimumInteractionThreshold { get; set; }
+
         /// <summary>
         /// Maximum sound effect file size (in bytes).
         /// </summary>
@@ -51,6 +53,7 @@ namespace Discord.Soundboard
             this.SpeechRecognitionConfidenceThreshold = 0.85f;
             this.IsSpeechRecognitionEnabled = false;
             this.MaximumSoundEffectSize = 2 * 1024 * 1024;
+            this.MinimumInteractionThreshold = 500;
         }
 
         public static SoundboardBotConfiguration FromFile(string filename)
@@ -81,6 +84,7 @@ namespace Discord.Soundboard
             IsSpeechRecognitionEnabled = cfg.TryGetValue("voice.recognition.enabled", false);
             SpeechRecognitionConfidenceThreshold = cfg.TryGetValue("voice.recognition.threshold", 0.85f);
             MaximumSoundEffectSize = cfg.TryGetValue("repository.file.maximumSize", 2 * 1024 * 1024);
+            MinimumInteractionThreshold = cfg.TryGetValue("interaction.time.min", 500);
         }
     }
 }
