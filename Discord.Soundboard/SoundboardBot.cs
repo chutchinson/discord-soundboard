@@ -19,10 +19,11 @@ namespace Discord.Soundboard
 {
     public class SoundboardBot
     {
-        private DiscordClient client;
         private IAudioClient audio;
         private ManualResetEvent sending;
         private Task save;
+
+        public DiscordClient Client { get; protected set; }
 
         public Server Server { get; protected set; }
 
@@ -46,7 +47,7 @@ namespace Discord.Soundboard
             sending = new ManualResetEvent(true);
             save = CreateSaveTask();
 
-            client = new DiscordClient(x =>
+            Client = new DiscordClient(x =>
             {
                 x.AppName = Configuration.Name;
                 x.MessageCacheSize = 0;
@@ -55,9 +56,9 @@ namespace Discord.Soundboard
                 x.LogLevel = LogSeverity.Info;
             });
 
-            client.MessageReceived += OnMessageReceived;
-            client.UsingModules();
-            client.UsingAudio(x =>
+            Client.MessageReceived += OnMessageReceived;
+            Client.UsingModules();
+            Client.UsingAudio(x =>
             {
                 x.Mode = AudioMode.Outgoing;
                 x.EnableEncryption = false;
@@ -77,7 +78,7 @@ namespace Discord.Soundboard
         {
             return new Task(async () =>
             {
-                while (client.CancelToken != null && !client.CancelToken.IsCancellationRequested)
+                while (Client.CancelToken != null && !Client.CancelToken.IsCancellationRequested)
                 {
                     try
                     {
@@ -167,18 +168,18 @@ namespace Discord.Soundboard
             if (string.IsNullOrWhiteSpace(message))
                 return;
 
-            client.SetGame(message);
+            Client.SetGame(message);
         }
 
         public void Connect()
         {
-            client.ExecuteAndWait(async () =>
+            Client.ExecuteAndWait(async () =>
             {
                 SoundboardLoggingService.Instance.Info("authenticating...");
 
                 try
                 {
-                    await client.Connect(Configuration.User, Configuration.Password);
+                    await Client.Connect(Configuration.User, Configuration.Password);
                 }
                 catch (Exception ex)
                 {
@@ -190,7 +191,7 @@ namespace Discord.Soundboard
 
                 // Cache the server information
 
-                Server = client.FindServers(Configuration.Server).FirstOrDefault();
+                Server = Client.FindServers(Configuration.Server).FirstOrDefault();
 
                 // Set the status (game) message
 
@@ -288,88 +289,97 @@ namespace Discord.Soundboard
 
         }
 
-        public void SendMessage(Channel channel, string text)
+        public async void SendMessage(Channel channel, string text)
         {
             if (channel == null)
                 return;
 
-            channel.SendMessage(text);
+            await channel.SendMessage(text);
+        }
+
+        protected void OnAttachmentReceived(object sender, MessageEventArgs e)
+        {
+            var attachment = e.Message.Attachments.FirstOrDefault();
+
+            if (attachment != null)
+            {
+                var ext = Path.GetExtension(attachment.Filename);
+
+                if (attachment.Size > Configuration.MaximumSoundEffectSize)
+                {
+                    SendMessage(e.Channel, Properties.Resources.MessageInvalidFileSize);
+                    return;
+                }
+
+                if (!SoundEffectRepository.ValidateFilename(attachment.Filename))
+                {
+                    SendMessage(e.Channel, Properties.Resources.MessageInvalidFilename);
+                    return;
+                }
+
+                if (!SoundEffectRepository.ValidateFileExtension(ext))
+                {
+                    SendMessage(e.Channel, Properties.Resources.MessageUnsupportedFileExtension);
+                    return;
+                }
+
+                var key = Path.GetFileNameWithoutExtension(attachment.Filename);
+                var name = Path.GetFileName(attachment.Filename);
+                var path = Path.Combine(Configuration.EffectsPath, name);
+
+                if (SoundEffectRepository.Exists(name))
+                {
+                    SendMessage(e.Channel, Properties.Resources.MessageSoundExists);
+                    return;
+                }
+
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        using (var web = new WebClient())
+                        {
+                            SoundboardLoggingService.Instance.Info(
+                                string.Format("downloading sound <{0}>", name));
+
+                            web.DownloadFile(attachment.Url, path);
+
+                            SoundboardLoggingService.Instance.Info(
+                                string.Format("downloaded <{0}>", name));
+
+                            SoundEffectRepository.Add(new SoundboardEffect(path));
+                            SendMessage(e.Channel, string.Format(Properties.Resources.MessageSoundReady, name));
+
+                            SoundboardLoggingService.Instance.Info(
+                                string.Format("sound <{0}> is ready", name));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        SoundboardLoggingService.Instance.Error("failed to download sound <{0}>", ex);
+                        SendMessage(e.Channel, string.Format(Properties.Resources.MessageDownloadFailed, name));
+                    }
+                });
+
+            }
         }
 
         protected void OnMessageReceived(object sender, MessageEventArgs e)
         {
-            if (e.User.Id == client.CurrentUser.Id)
+            if (e.User.Id == Client.CurrentUser.Id)
                 return;
 
-            // TODO: handle multiple attachments
-            // TODO: handle exceptions
+            // Unflip tables
+
+            if (e.Message.RawText.Contains("┻━┻"))
+                SendMessage(e.Channel, "/unflip");
+
+            // Process attachments
 
             if (e.Channel.IsPrivate && e.Message.Attachments.Length > 0)
-            {
-                var attachment = e.Message.Attachments.FirstOrDefault();
+                OnAttachmentReceived(sender, e);
 
-                if (attachment != null)
-                {
-                    var ext = Path.GetExtension(attachment.Filename);
-
-                    if (attachment.Size > Configuration.MaximumSoundEffectSize)
-                    {
-                        SendMessage(e.Channel, Properties.Resources.MessageInvalidFileSize);
-                        return;
-                    }
-
-                    if (!SoundEffectRepository.ValidateFilename(attachment.Filename))
-                    {
-                        SendMessage(e.Channel, Properties.Resources.MessageInvalidFilename);
-                        return;
-                    }
-
-                    if (!SoundEffectRepository.ValidateFileExtension(ext))
-                    {
-                        SendMessage(e.Channel, Properties.Resources.MessageUnsupportedFileExtension);
-                        return;
-                    }
-
-                    var key = Path.GetFileNameWithoutExtension(attachment.Filename);
-                    var name = Path.GetFileName(attachment.Filename);
-                    var path = Path.Combine(Configuration.EffectsPath, name);
-
-                    if (SoundEffectRepository.Exists(name))
-                    {
-                        SendMessage(e.Channel, Properties.Resources.MessageSoundExists);
-                        return;
-                    }
-
-                    Task.Run(() =>
-                    {
-                        try
-                        {
-                            using (var web = new WebClient())
-                            {
-                                SoundboardLoggingService.Instance.Info(
-                                    string.Format("downloading sound <{0}>", name));
-
-                                web.DownloadFile(attachment.Url, path);
-
-                                SoundboardLoggingService.Instance.Info(
-                                    string.Format("downloaded <{0}>", name));
-
-                                SoundEffectRepository.Add(new SoundboardEffect(path));
-                                SendMessage(e.Channel, string.Format(Properties.Resources.MessageSoundReady, name));
-
-                                SoundboardLoggingService.Instance.Info(
-                                    string.Format("sound <{0}> is ready", name));
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            SoundboardLoggingService.Instance.Error("failed to download sound <{0}>", ex);
-                            SendMessage(e.Channel, string.Format(Properties.Resources.MessageDownloadFailed, name));
-                        }
-                    });
-
-                }
-            }
+            // Process commands
 
             if (e.Message.IsMentioningMe())
             {
