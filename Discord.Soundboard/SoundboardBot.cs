@@ -387,7 +387,7 @@ namespace Discord.Soundboard
             // Unflip tables
 
             if (e.Message.RawText.Contains("┻━┻"))
-                SendMessage(e.Channel, "/unflip");
+                SendMessage(e.Channel, "┬─┬﻿ ノ( ゜-゜ノ)");
 
             // Process attachments
 
