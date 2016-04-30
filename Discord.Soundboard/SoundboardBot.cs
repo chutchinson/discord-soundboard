@@ -182,7 +182,14 @@ namespace Discord.Soundboard
 
                 try
                 {
-                    await Client.Connect(Configuration.User, Configuration.Password);
+                    if (!string.IsNullOrEmpty(Configuration.Token))
+                    {
+                        await Client.Connect(Configuration.Token);
+                    }
+                    else
+                    {
+                        await Client.Connect(Configuration.User, Configuration.Password);
+                    }
                 }
                 catch (Exception ex)
                 {
