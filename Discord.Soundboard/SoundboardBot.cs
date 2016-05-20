@@ -65,7 +65,6 @@ namespace Discord.Soundboard
             {
                 x.Mode = AudioMode.Outgoing;
                 x.EnableEncryption = false;
-                x.EnableMultiserver = false;
                 x.Bitrate = 128;
                 x.BufferLength = 10000;
             });
@@ -182,7 +181,7 @@ namespace Discord.Soundboard
 
                 try
                 {
-                    await Client.Connect(Configuration.User, Configuration.Password);
+                    await Client.Connect("MTc2MDQxNjUzNTgzMzQ3NzEy.CiEvdw.wrrrFWWNh7naoXXon8KkVKoCnXw"); //  Configuration.User, Configuration.Password);
                 }
                 catch (Exception ex)
                 {
@@ -195,22 +194,10 @@ namespace Discord.Soundboard
                 // Cache the server information
 
                 Server = Client.FindServers(Configuration.Server).FirstOrDefault();
-
+                
                 // Set the status (game) message
 
                 SetStatusMessage(Configuration.Status);
-
-                if (!string.IsNullOrEmpty(Configuration.VoiceChannel))
-                {
-                    if (Server == null)
-                    {
-                        SoundboardLoggingService.Instance.Error(
-                            string.Format("could not find server <{0}>", Configuration.Server));
-                        return;
-                    }
-
-                    ConnectToVoice();
-                }
 
                 SoundboardLoggingService.Instance.Info("ready");
 
@@ -218,6 +205,11 @@ namespace Discord.Soundboard
 
                 save.Start();
             });
+        }
+
+        public void Disconnect()
+        {
+            Client.Disconnect();
         }
 
         public void PlaySoundEffect(User user, Channel ch, string name)
@@ -246,10 +238,6 @@ namespace Discord.Soundboard
 
                         SoundboardLoggingService.Instance.Info(
                             string.Format("[{0}] playing <{1}>", user.Name, name));
-
-                        // Change "playing" to the sound effect name
-
-                        SetStatusMessage(name);
 
                         // Records play statistics
 
@@ -406,6 +394,10 @@ namespace Discord.Soundboard
 
                 switch (cmd)
                 {
+                    case "connect":
+                        Server = e.Channel.Server;
+                        ConnectToVoice();
+                        break;
                     case "list":
                         CommandListSounds(e.User, e.Channel, tokens);
                         break;

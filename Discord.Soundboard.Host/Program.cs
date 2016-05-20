@@ -15,6 +15,8 @@ namespace Discord.Soundboard.Host
 
             Console.Title = configuration.Name;
 
+            // WARN: Incredibly lazy and insecure, please forgive me. 
+
             if (IsRunningOnMono())
             {
                 ServicePointManager.ServerCertificateValidationCallback +=
@@ -28,6 +30,7 @@ namespace Discord.Soundboard.Host
             }
             finally
             {
+                bot.Disconnect();
                 bot.Database.Save();
             }
         }
