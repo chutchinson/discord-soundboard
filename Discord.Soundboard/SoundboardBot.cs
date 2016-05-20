@@ -262,8 +262,6 @@ namespace Discord.Soundboard
                         }
 
                         audio.Wait();
-
-                        SetStatusMessage(Configuration.Status);
                     }
 
                 }
