@@ -181,7 +181,14 @@ namespace Discord.Soundboard
 
                 try
                 {
-                    await Client.Connect("MTc2MDQxNjUzNTgzMzQ3NzEy.CiEvdw.wrrrFWWNh7naoXXon8KkVKoCnXw"); //  Configuration.User, Configuration.Password);
+                    if (!string.IsNullOrEmpty(Configuration.Token))
+                    {
+                        await Client.Connect(Configuration.Token);
+                    }
+                    else
+                    {
+                        await Client.Connect(Configuration.User, Configuration.Password);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -190,11 +197,7 @@ namespace Discord.Soundboard
                 }
 
                 SoundboardLoggingService.Instance.Info("authenticated");
-
-                // Cache the server information
-
-                Server = Client.FindServers(Configuration.Server).FirstOrDefault();
-                
+                                
                 // Set the status (game) message
 
                 SetStatusMessage(Configuration.Status);
