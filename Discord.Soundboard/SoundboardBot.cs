@@ -183,7 +183,7 @@ namespace Discord.Soundboard
                 {
                     if (!string.IsNullOrEmpty(Configuration.Token))
                     {
-                        await Client.Connect(Configuration.Token);
+                        await Client.Connect(Configuration.Token, TokenType.Bot);
                     }
                     else
                     {
